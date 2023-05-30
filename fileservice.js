@@ -21,6 +21,14 @@ async function appendFile(fileName, data) {
       console.error('Error appending data:', err);
     }
   }
+  async function writeFile(fileName, data) {
+    try {
+      await fs.promises.writeFile(fileName, data);
+      console.log('File written successfully!');
+    } catch (err) {
+      console.error('Error writing file:', err);
+    }
+  }
 
 function createFolderStructure() {
   const folders = getBooks();
@@ -35,8 +43,27 @@ function createFolderStructure() {
     }
   }
 }
+
+
+async function createFolderJudment(){
+  const books = getBooks();
+  for (let year = 1949; year <= 1969; year++) {
+      for (let book = 0; book < books.length; book++) {
+          const directory = `./data/${year}/${books[book]}`;
+          let json  = await makeApiCall(year,books[book],'','',1,2147483647);
+          for (let judment = 0; judment < json.data.length; judment++) {
+              const element = json.data[judment] //json.data[judment]._id.$oid;
+              console.log(`Creating Folder ${directory + "/" + id}`);
+              await fs.mkdir(directory + "/" + id, { recursive: true }, (err) => {if (err){console.log(err)} {
+                  
+              }});
+          }
+      }
+  }
+}
 module.exports = {
     getBooks,
     getYears,
-    appendFile
+    appendFile,
+    writeFile
 }

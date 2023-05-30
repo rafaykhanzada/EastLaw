@@ -1,44 +1,71 @@
-const {getBooks,appendFile} = require('./fileservice');
+const {getBooks,writeFile} = require('./fileservice');
 const fs = require('fs');
 const axios = require('axios');
+const { appendFile } = require('fs/promises');
 
 // Write Folder Structure
-
-
+const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NDc0ODI2OWI4ZDZmODkwMmY0YzI0NDAiLCJlbWFpbCI6ImFiZHVsLnJhZmF5QGZpbm9zeXMuY29tIiwicm9sZSI6ImZyZWUiLCJlbWFpbFZlcmlmaWVkIjp0cnVlLCJwbGFuIjoiRnJlZSBVc2VycyIsImlhdCI6MTY4NTQ1MjA2NCwiZXhwIjoxNjg1NDczNjY0fQ.7CvQU6U00si0h6-MAeUTKCnsRnUH0OA6xlLqlrLOMHY'; // Replace with your bearer token
 
 async function createFolderJudment(){
     const books = getBooks();
-    for (let year = 1968; year <= 2023; year++) {
-        for (let book = 0; book < books.length; book++) {
-            const directory = `./data/${year}/${books[book]}`;
-            let json  = await makeApiCall(year,books[book],'','',1,2147483647);
-            for (let judment = 0; judment < json.data.length; judment++) {
-                const id = json.data[judment]._id.$oid;
-                console.log(`Creating Folder ${directory + "/" + id}`);
-                await fs.mkdir(directory + "/" + id, { recursive: true }, (err) => {if (err){console.log(err)} {
-                    
-                }});
-            }
-        }
+    let CurrentYear = 1949;
+    let CurrentBook = 'CLC';
+    let CurrentId = '';
 
-        // const yearFolderName = './data/' + year.toString();
-        // fs.mkdirSync(yearFolderName);
-        // for (const folder of folders) {
-        //     const folderPath = `${yearFolderName}/${folder}`;
-        //     fs.mkdirSync(folderPath);
-        //     for(const year of years){
-        //         const yearPath = `${folderPath}/${year}`;
-        //         fs.mkdirSync(yearPath);
-        //     }
-        // }
+
+    //Read Current Year 
+    let logs = fs.readFileSync('logs.txt', 'utf-8').split("\n");
+    if (logs[0]) {
+      CurrentYear =logs[0].split('|')[0];
+      CurrentBook = logs[0].split('|')[1];
+      CurrentId = logs[0].split('|')[2];
     }
+   try {
+    for (let year = CurrentYear; year <= 2023; year++) {
+      for (let book = CurrentBook; book < books.length; book++) {
+          const directory = `./data/${year}/${books[book]}`;
+          let json  = await makeApiCall(year,books[book],'','',1,2147483647);
+          for (let judment = CurrentId; judment < json.data.length; judment++) {
+              const element = json.data[judment] //json.data[judment]._id.$oid;
+              console.log(`Target Folder ${directory + "/" + element._id.$oid}`);
+              //await fs.mkdir(directory + "/" + element._id.$oid, { recursive: true }, (err) => {if (err){console.log(err)} {}});
+               let detail = await JudmentAPI(`https://eastlaw.pk/api/case-search/search-by-id/${element._id.$oid}`);
+               await writeFile(`${directory + "/" + element._id.$oid +"/Citation.json"}`,JSON.stringify(element));
+               await writeFile(`${directory + "/" + element._id.$oid +"/Judgment.json"}`,JSON.stringify(detail));
+               await writeFile('logs.txt',`${year + "|"+ book +"|"+ judment + "\n"}`)
+          }
+      }
+  }
+   } catch (error) {
+    createFolderJudment()
+   }
 }
 
+// Judment API
 
+async function JudmentAPI(url) {
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      timeout: 59000 // Set the timeout value
+    });
+
+    // Return the incoming JSON response
+    return response.data;
+  } catch (error) {
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timed out:');
+    } else {
+      console.error('Error making API call:', error.message);
+    }
+    throw error;
+  }
+}
 
 async function makeApiCall(citationYear, citationJournel,citationPageNo,citationCategory,pageNo,pageSize) {
     const url = `https://eastlaw.pk/api/citation-search/case-by-citation?citationYear=${citationYear}&citationJournel=${citationJournel}&citationPageNo=${citationPageNo}&citationCategory=${citationCategory}&pageNo=${pageNo}&pageSize=${pageSize}`; // Replace with your API endpoint URL
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NDc0ODI2OWI4ZDZmODkwMmY0YzI0NDAiLCJlbWFpbCI6ImFiZHVsLnJhZmF5QGZpbm9zeXMuY29tIiwicm9sZSI6ImZyZWUiLCJlbWFpbFZlcmlmaWVkIjp0cnVlLCJwbGFuIjoiRnJlZSBVc2VycyIsImlhdCI6MTY4NTM3OTAwNSwiZXhwIjoxNjg1NDAwNjA1fQ.xtS7CCXc5tQTeAHHC8BDxmftkT1Ve2YLgYfHVSogyN4'; // Replace with your bearer token
   
     try {
       const response = await axios.get(url, {

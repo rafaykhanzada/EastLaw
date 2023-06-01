@@ -4,7 +4,7 @@ const axios = require('axios');
 const { appendFile } = require('fs/promises');
 
 // Write Folder Structure
-const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NDc0ODI2OWI4ZDZmODkwMmY0YzI0NDAiLCJlbWFpbCI6ImFiZHVsLnJhZmF5QGZpbm9zeXMuY29tIiwicm9sZSI6ImZyZWUiLCJlbWFpbFZlcmlmaWVkIjp0cnVlLCJwbGFuIjoiRnJlZSBVc2VycyIsImlhdCI6MTY4NTQ1MjA2NCwiZXhwIjoxNjg1NDczNjY0fQ.7CvQU6U00si0h6-MAeUTKCnsRnUH0OA6xlLqlrLOMHY'; // Replace with your bearer token
+const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NDc0ODI2OWI4ZDZmODkwMmY0YzI0NDAiLCJlbWFpbCI6ImFiZHVsLnJhZmF5QGZpbm9zeXMuY29tIiwicm9sZSI6ImZyZWUiLCJlbWFpbFZlcmlmaWVkIjp0cnVlLCJwbGFuIjoiRnJlZSBVc2VycyIsImlhdCI6MTY4NTU5ODY4MiwiZXhwIjoxNjg1NjIwMjgyfQ.Oj2cF2qOTjygdCK7WvbDwo4sd3IHUQdo__XiCuBEySg'; // Replace with your bearer token
 
 async function createFolderJudment(){
     const books = getBooks();
@@ -34,7 +34,9 @@ async function createFolderJudment(){
                await writeFile(`${directory + "/" + element._id.$oid +"/Judgment.json"}`,JSON.stringify(detail));
                await writeFile('logs.txt',`${year + "|"+ book +"|"+ judment + "\n"}`)
           }
-      }
+          CurrentId=0;
+      } 
+      CurrentBook = 0;
   }
    } catch (error) {
     createFolderJudment()
